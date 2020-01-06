@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="2">
+        <file>
+            <url>vUSBMSC_32.c</url>
+            <bookmark id="2">
+                <name/>
+                <line>72</line>
+                <key/>
+            </bookmark>
+            <bookmark id="1">
+                <name/>
+                <line>267</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/mcc_generated_files/uart2.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vSCSI_32.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vSCSI_32.h</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vUSBMSC_32.h</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vUART_CMND.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vUSBMSC_32.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/vUART_MENU.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/main.c</file>
+            <file>file:/C:/Program%20Files%20(x86)/Microchip/MPLABX/v5.30/packs/Microchip/PIC32MX_DFP/1.1.215/xc32/startup/crt0.S</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USB_Driver_Sample/USB_Driver_sample.X/v.h</file>
+        </group>
+    </open-files>
+</project-private>
