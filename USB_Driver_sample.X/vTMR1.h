@@ -15,7 +15,7 @@
  * DEFINES
  *****************************/
 #define IS_uiTMR001_FINISH (uiTMR001==0)
-//#define IS_uiTMR002_FINISH (uiTMR002==0)
+#define IS_uiTMR002_FINISH (uiTMR002==0)
 //#define IS_uiTMR003_FINISH (uiTMR003==0)
 //#define IS_uiTMR004_FINISH (uiTMR004==0)
 //#define IS_uiTMR005_FINISH (uiTMR005==0)
@@ -29,7 +29,7 @@
 #else
 volatile extern unsigned int
 		uiTMR001,
-//		uiTMR002,
+		uiTMR002,
 //		uiTMR003,
 //		uiTMR004,
 //		uiTMR005,

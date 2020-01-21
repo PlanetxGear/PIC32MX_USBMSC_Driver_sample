@@ -21,6 +21,7 @@ enum eSCSI_COMMAND {
 	eSCSI_requestSense,
 	eSCSI_readFormatCapacity,
 	eSCSI_readCapacity,
+	eSCSI_testUnitReady,
 	eSCSI_read,
 	eSCSI_write
 };
@@ -30,7 +31,14 @@ enum eSCSI_STATE {
 	eSCSI_CBW,
 	eSCSI_CBW_start,
 	eSCSI_CBW_wait,
+    
+//	eSCSI_CBWempty_start,
+//	eSCSI_CBWempty_wait,
+    
     eSCSI_getputBranch,
+
+//	eSCSI_getEmpty_start,
+//	eSCSI_getEmpty_wait,
     
 	eSCSI_getData_start,
 	eSCSI_getData_wait,
@@ -39,12 +47,31 @@ enum eSCSI_STATE {
 	eSCSI_putData_start,
 	eSCSI_putData_wait,
 	eSCSI_putData_next,
+
+//	eSCSI_putEmpty_start,
+//	eSCSI_putEmpty_wait,
+//	eSCSI_putEmpty_next,
+    
 	
 //    eSCSI_CSW,
+//    eSCSI_CSWempty_start,
+//    eSCSI_CSWempty_wait,
+
 	eSCSI_CSW_start,
 	eSCSI_CSW_wait,
     eSCSI_check_CSW_return,
 	
+
+// test.
+    eSCSI_EPin_EmptyOut_test,
+    eSCSI_EPin_EmptyOut_test1,
+    eSCSI_EPin_EmptyOut_test2,
+
+    eSCSI_EPout_EmptyIn_test,
+    eSCSI_EPout_EmptyIn_test1,
+    eSCSI_EPout_EmptyIn_test2,
+	
+    
 // IDLE or END or WAIT next data.
 	eSCSI_IDLE,
 
@@ -64,8 +91,8 @@ enum eSCSI_STATE {
  * DEFINES
  *****************************/
 #define SECTOR_LENGTH512	512
-#define setSCSI_NOT_INITIALIZED()   (SCSIcondition.Status = eSCSI_ERR_NOT_INITIALIZED)
-#define isSCSI_ERROR()              (SCSIcondition.Status >= eSCSI_ERRORS)
+#define setSCSI_NOT_INITIALIZED()   (SCSIobj.Status = eSCSI_ERR_NOT_INITIALIZED)
+#define isSCSI_ERROR()              (SCSIobj.Status >= eSCSI_ERRORS)
 
 
 typedef struct __SCSI_CONDITION
@@ -74,14 +101,15 @@ typedef struct __SCSI_CONDITION
 	enum eSCSI_COMMAND		Command;
 	enum eSCSI_STATE        ErrorCode;
     UINT32					MscTotal;		// SCSI final sector number
-    UINT32					DataLength;		// transmission data length
+    UINT16					DataLength;		// transmission data length
     UINT8*					UsbBuffAddr;	// transmission data buffer address
+    UINT8                   WaitTrap;       //wait trap
 } SCSI_CONDITION;
 
 /*****************************
  * VARIABLES
  *****************************/
-extern SCSI_CONDITION SCSIcondition;
+extern SCSI_CONDITION SCSIobj;
 //extern UINT8 UsbBufDAT512[512];	// Usb buffer for DATA
 
 /*****************************
@@ -103,6 +131,10 @@ UINT8* 	buffAddr	// working buffer, which is putted in transmission data.
 );
 
 void SCSI_readCapacity(
+UINT8* 	buffAddr	// working buffer, which is putted in transmission data.
+);
+
+void SCSI_testUnitReady(
 UINT8* 	buffAddr	// working buffer, which is putted in transmission data.
 );
 

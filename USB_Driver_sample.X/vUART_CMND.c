@@ -31,8 +31,15 @@ int iCIdx;		//command buffer insert position.
  */
 void vPutc_to_TxFifo(unsigned char d)
 {
-	while (UART2_TransmitBufferIsFull()) 
+	while (UART2_TransmitBufferIsFull() && (UART2_TransferStatusGet() & UART2_TRANSFER_STATUS_TX_FULL) )
 	{
+//        if(uart2_obj.txHead == uart2_obj.txTail)
+//        {
+//            uart2_obj.txStatus.s.empty = true;
+//            uart2_obj.
+//            break;
+//        }
+
 	}	// Wait while Tx FIFO is full
 
 	UART2_Write(d);

@@ -35,14 +35,22 @@ const BYTE bMsg01[] = {
 //	"+Input your command!\n"		
 	"+(DEL)->Command clear\n"		
 	"+(ESC)->exit or clear\n"
-	"+Thhmmss->Time setting\n"
+//	"+Thhmmss->Time setting\n"
 	"+ua->initializ USB & set USB Address as 1, Config as 1\n"				
-	"+ub->command SCSI inquiry\n"
-	"+uc->command SCSI readCapacity & get LastSecter No.\n"
-	"+ue->command SCSI requestSense\n"
-	"+uf->command SCSI readFormatCapacity & get LastSecter No.\n"
-	"+ur->command SCSI read & get data in the LastSecter\n"				
-	"+uw <No.>->command SCSI write & write a No. into the LastSecter\n"				
+	"+ub->SCSI inquiry\n"
+	"+uc->SCSI readCapacity & get LastSecter No.\n"
+	"+uk->SCSI readFormatCapacity & get LastSecter No.\n"
+	"+ud->USB Dump Device Discriptor\n"
+	"+uf->USB Dump Config Discriptor\n"
+    "+ui <wait_msec>->insert wait msec to SCSI\n"
+	"+ur <sector>->SCSI read & get data in the last Secter or assigned Sector\n"				
+	"+us->SCSI requestSense\n"
+	"+ut->SCSI testUnitReady\n"
+	"+ut->SCSI & USB status\n"
+	"+uw <No.>->command SCSI write & write a No. into the LastSecter\n"		
+    "+ux <ofs>->Dump R/W data buffer\n"
+    "+uy <ofs>->Dump UsbBufCMD64\n"
+	"+uz->SCSI & USB status\n"
 	"?a ALL help.\n"
 	"\0"
 };
@@ -60,83 +68,75 @@ void vUART_MENU_init(void)
 //******************************************************************************
 void vUART_MENU_control(void)
 {
-//	BYTE *ptr;
-//	ptr = &cCmdBuf[0];
+//    BYTE *ptr;
+//    ptr = &cCmdBuf[0];
 
-	switch (eUART_MENU_status) 
-	{
-	case  	eUART_MENU_menu_msg1 :
-		xputs((char *)bMsg01);		//start message output
-		eUART_MENU_status++;		//next status
-		break;
+    switch (eUART_MENU_status) 
+    {
+    case      eUART_MENU_menu_msg1 :
+        xputs((char *)bMsg01);        //start message output
+        eUART_MENU_status++;        //next status
+        break;
 
-	case  	eUART_MENU_prompt :
-		vXputs_prompt();		//output "LF" and ">"
-		eUART_MENU_status++;		//next status
-		break;
+    case      eUART_MENU_prompt :
+        vXputs_prompt();        //output "LF" and ">"
+        eUART_MENU_status++;        //next status
+        break;
 
-	case  	eUART_MENU_getCMND :
-		switch(eUART_CMND_Getc())		//get command strings and input them into command buffer
-		{
-		case eUART_CMND_Wait:
-			break;
-		case eUART_CMND_Exec:
-			eUART_MENU_status = eUART_MENU_execCommand;
-			break;
-		case eUART_CMND_Esc:
-			eUART_MENU_status = eUART_MENU_menu_msg1;
-			break;
-		case eUART_CMND_Del:
-			eUART_MENU_status = eUART_MENU_prompt;
-			break;
-		case eUART_CMND_Err:
-			eUART_MENU_status = eUART_MENU_prompt;
-			break;
-		default:		//waiting until finishing command input & ENTER
-			break;
-		}
-		break;
-
-	case  	eUART_MENU_execCommand:		//Command selection
-		switch(cCmdBuf[0]) 
-		{
-		case 'U':		//USB setting command
-		case 'u':		//USB setting command
-			vUART_commandUSB();
-			eUART_MENU_status = eUART_MENU_prompt;
+    case      eUART_MENU_getCMND :
+        switch(eUART_CMND_Getc())        //get command strings and input them into command buffer
+        {
+        case eUART_CMND_Wait:
             break;
-			
-#ifdef _V_DEBUG
-		case 'C':								//other Check & Test
-		case 'c':								//
-			vCommand_CheckAndTest();
-			eUART_MENU_status = eUART_MENU_prompt;
-			break;
-#endif
-			
-		case '?':	//out put menu
-			vCommand_Help();
-			eUART_MENU_status = eUART_MENU_prompt;
-			break;
-		case '\n':	//LF
-		case '\0':								//NULL
-			eUART_MENU_status = eUART_MENU_prompt;
-			break;
+        case eUART_CMND_Exec:
+            eUART_MENU_status = eUART_MENU_execCommand;
+            break;
+        case eUART_CMND_Esc:
+            eUART_MENU_status = eUART_MENU_menu_msg1;
+            break;
+        case eUART_CMND_Del:
+            eUART_MENU_status = eUART_MENU_prompt;
+            break;
+        case eUART_CMND_Err:
+            eUART_MENU_status = eUART_MENU_prompt;
+            break;
+        default:        //waiting until finishing command input & ENTER
+            break;
+        }
+        break;
 
-		default:								// command error
-			eUART_MENU_status = eUART_MENU_commandError;
-			break;
-		}
-		break;
+    case      eUART_MENU_execCommand:        //Command selection
+        switch(cCmdBuf[0]) 
+        {
+        case 'U':        //USB setting command
+        case 'u':        //USB setting command
+            vUART_commandUSB();
+            eUART_MENU_status = eUART_MENU_prompt;
+            break;
+            
+        case '?':    //out put menu
+            vCommand_Help();
+            eUART_MENU_status = eUART_MENU_prompt;
+            break;
+        case '\n':    //LF
+        case '\0':                                //NULL
+            eUART_MENU_status = eUART_MENU_prompt;
+            break;
 
-	case  	eUART_MENU_commandError:
-		xputs("? Unrecognized command format\n");	
-		eUART_MENU_status = eUART_MENU_prompt;
-		break;
+        default:                                // command error
+            eUART_MENU_status = eUART_MENU_commandError;
+            break;
+        }
+        break;
 
-	default:
-		eUART_MENU_status = eUART_MENU_prompt;
-	}
+    case      eUART_MENU_commandError:
+        xputs("? Unrecognized command format\n");    
+        eUART_MENU_status = eUART_MENU_prompt;
+        break;
+
+    default:
+        eUART_MENU_status = eUART_MENU_prompt;
+    }
 
 }
 
@@ -145,143 +145,176 @@ void vUART_MENU_control(void)
 //******************************************************************************
 void vUART_commandUSB(void)
 {
-char*	pCmdbuf;
-BYTE*	ptr;
-long	num1, p1;
-int		i;
+char*    pCmdbuf;
+BYTE*    ptr;
+long    num1, p1;
+int        i;
 long    ofs;
 UINT    cnt;
-	
+    
     pCmdbuf = (char*)&cCmdBuf[1];
-	p1 = 0;
+    p1 = 0;
     for (ptr=UsbBufDAT512, i = 0; i < 512; ptr += 1, i += 1)
     {
         *ptr = 0;
     }
 
-	switch(cCmdBuf[1]) {
-	case 'A':
-	case 'a':
-		SCSI_init();
-		break;
+    switch(cCmdBuf[1]) {
+    case 'A':
+    case 'a':
+        SCSI_init();
+        break;
 
-	case 'B':
-	case 'b':
+    case 'B':
+    case 'b':
 //        SCSI_requestSense(UsbBufDAT512);
+        xputs("SCSI_inquiry\n");
         SCSI_inquiry(UsbBufDAT512);
         for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
             put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
 
         // default value for debug
-        SCSIcondition.MscTotal = 0x79dfff;
-        SCSIcondition.DataLength = 0x200;
+//        SCSIobj.MscTotal = 0x79dfff;
+//        SCSIobj.DataLength = 0x200;
 
-		break;
+        break;
 
-	case 'E':
-	case 'e':
-        SCSI_requestSense(UsbBufDAT512);
-        for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
-            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
-		break;
-
-	case 'C':
-	case 'c':
+    case 'C':
+    case 'c':
+        xputs("SCSI_readCapacity\n");
         SCSI_readCapacity(UsbBufDAT512);
         for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
             put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
-		break;
+        break;
         
-	case 'F':
-	case 'f':
+    case 'K':
+    case 'k':
+        xputs("SCSI_readFormatCapacity\n");
         SCSI_readFormatCapacity(UsbBufDAT512);
         for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
             put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
-		break;
+        break;
         
-    case 'D' :	/* bd <ofs> - Dump R/W buffer */
-    case 'd' :	/* bd <ofs> - Dump R/W buffer */
-		pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
-		if (!xatoi(&pCmdbuf, &p1))
-		{
-			p1 = 0;
-		}
-        for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 32; cnt; cnt--, ptr += 16, ofs += 16)
+    case 'D':
+    case 'd':   // Dump Device Discriptor
+        xputs("Dump Device Discriptor\n");
+        for (ptr=(BYTE*)USBobj.pUSB_Descriptors, ofs = p1, cnt = 2; cnt; cnt--, ptr += 16, ofs += 16)
             put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
         break;
 
-	case 'R':
-	case 'r':
+    case 'F':
+    case 'f':   // Dump Config Discriptor
+        xputs("Dump Config Discriptor\n");
+        for (ptr=((BYTE*)USBobj.pUSB_Descriptors + sizeof(USB_DEVICE_DESCRIPTOR)), ofs = p1, cnt = 2; cnt; cnt--, ptr += 16, ofs += 16)
+            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
+        break;
+        
+        
+    case 'R':
+    case 'r':
+        xputs("SCSI_read\n");
         // read data buffer.
-        SCSI_read(UsbBufDAT512, SCSIcondition.MscTotal);
+        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
+        if (xatoi(&pCmdbuf, &p1))
+        {
+            num1 = p1;
+        }
+        else
+        {
+            num1 = SCSIobj.MscTotal;
+        }
+        SCSI_read(UsbBufDAT512, num1);
         for (ptr=(BYTE*)UsbBufDAT512, ofs = 0; ofs < 512; ptr += 16, ofs += 16)
         {
             put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
         }
-		break;
-		
-	case 'S':
-	case 's':
-        xprintf("SCSIstatus:%d USBstatus:%d \n",SCSIcondition.Status, USBcondition.Status);
-		break;
-		
-	case 'W':
-	case 'w':	/* uw <No.> - Fill the last sector with a No. */
-		pCmdbuf = (char*)&cCmdBuf[3];   //Get a No.
-		if (!xatoi(&pCmdbuf, &num1))
-		{
-			vXputs_FormatError();
-		} else if (SCSIcondition.MscTotal == 0)
+        break;
+        
+    case 'S':
+    case 's':
+        xputs("SCSI_requestSense\n");
+        SCSI_requestSense(UsbBufDAT512);
+        for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
+            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
+        break;
+
+    case 'T':
+    case 't':
+        xputs("SCSI_testUnitReady\n");
+        SCSI_testUnitReady(UsbBufDAT512);
+        for (ptr=&UsbBufCMD64[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
+            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
+        break;
+    
+    case 'W':
+    case 'w':    /* uw <No.> - Fill the last sector with a No. */
+        xputs("SCSI_write\n");
+        pCmdbuf = (char*)&cCmdBuf[3];   //Get a No.
+        if (!xatoi(&pCmdbuf, &num1))
         {
-            	xputs("You should get Max sector No. by 'UC' command.\n");
+            vXputs_FormatError();
+        } else if (SCSIobj.MscTotal == 0)
+        {
+                xputs("You should get Max sector No. by 'UC' command.\n");
         } else
-		{
-			// set data buffer by input Number
-			for (ptr=UsbBufDAT512, i = 0; i < 512; ptr += 1, i += 1)
-			{
-				*ptr = num1;
-			}
-            SCSI_write(UsbBufDAT512, SCSIcondition.MscTotal);
-		}
-		break;
-		
-	default:
-//		xputs("?Format Error.\n");	//入力エラー
-		vXputs_FormatError();
-		break;
-	}
+        {
+            // set data buffer by input Number
+            for (ptr=UsbBufDAT512, i = 0; i < 512; ptr += 1, i += 1)
+            {
+                *ptr = num1;
+            }
+            SCSI_write(UsbBufDAT512, SCSIobj.MscTotal);
+        }
+        break;
+
+    case 'X' :    /* ux <ofs> - Dump R/W buffer */
+    case 'x' :    /* ux <ofs> - Dump R/W buffer */
+        xputs("Dump Data buffer\n");
+        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
+        if (!xatoi(&pCmdbuf, &p1))
+        {
+            p1 = 0;
+        }
+        for (ptr=&UsbBufDAT512[p1], ofs = p1, cnt = 32; cnt; cnt--, ptr += 16, ofs += 16)
+            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
+        break;
+
+    case 'Y' :    /* uy <ofs> - Dump R/W buffer */
+    case 'y' :    /* uyx <ofs> - Dump R/W buffer */
+        xputs("Dump Command buffer\n");
+        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
+        if (!xatoi(&pCmdbuf, &p1))
+        {
+            p1 = 0;
+        }
+        for (ptr=&UsbBufCMD64[p1], ofs = p1, cnt = 4; cnt; cnt--, ptr += 16, ofs += 16)
+            put_dump((BYTE*)ptr, ofs, 16, DW_CHAR);
+        break;
+
+    case 'Z':
+    case 'z':
+        xprintf("SCSIstatus:%d USBstatus:%d \n",SCSIobj.Status, USBobj.Status);
+        break;
+        
+    case 'I' :    /* ui <wait msec> - insert wait msec */
+    case 'i' :    /* ui <wait msec> - insert wait msec */
+        xputs("set wait msec\n");
+        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
+        if (!xatoi(&pCmdbuf, &p1))
+        {
+            p1 = 0;
+        }
+        SCSIobj.WaitTrap = p1;
+        break;
+
+
+    default:
+//        xputs("?Format Error.\n");    //入力エラー
+        vXputs_FormatError();
+        break;
+    }
 
 }
-
-
-#ifdef _V_DEBUG
-//******************************************************************************
-//* Other Check & Test 
-//******************************************************************************
-void vCommand_CheckAndTest(void)
-{
-/*
-	switch(cCmdBuf[0]) {
-	case 'C':
-	case 'c':
-		if(cCmdBuf[1]=='d'){
-			vLCD_menu12_close();
-			vLCD_task11_close();
-			xprintf( "LCD DisEN\n");
-		}else{
-			vLCD_task11_open();
-			vLCD_menu12_open();
-			xprintf( "LCD EN & open\n");
-		}
-		break;
-
-	default:
-		vXputs_FormatError();
-		break;
-	}
-*/
-}
-#endif
 
 
 //******************************************************************************
@@ -289,22 +322,22 @@ void vCommand_CheckAndTest(void)
 //******************************************************************************
 void vCommand_Help(void)
 {
-//	BYTE *ptr;
-//	ptr = &cCmdBuf[0];
-	switch (cCmdBuf[0]) {
-	case '?' :
-		switch (cCmdBuf[1]) {
-		case 'a' :	// ALL help.
-			xputs((char *)bMsg01);
-			break;
+//    BYTE *ptr;
+//    ptr = &cCmdBuf[0];
+    switch (cCmdBuf[0]) {
+    case '?' :
+        switch (cCmdBuf[1]) {
+        case 'a' :    // ALL help.
+            xputs((char *)bMsg01);
+            break;
 
-		default:	// general message
-			xputs((char *)bMsg01);
-			break;
-		}		
-		break;
-	}
-		
+        default:    // general message
+            xputs((char *)bMsg01);
+            break;
+        }        
+        break;
+    }
+        
 }
 
 
@@ -313,7 +346,7 @@ void vCommand_Help(void)
 //******************************************************************************
 void vXputs_prompt(void)
 {
-	xputs(">");	
+    xputs(">");    
 }
 
 //******************************************************************************
@@ -321,16 +354,16 @@ void vXputs_prompt(void)
 //******************************************************************************
 void vXputs_FormatError(void)
 {
-	xputs("? Format Error.\n");	
+    xputs("? Format Error.\n");    
 }
 
 //******************************************************************************
 //* output "command Error"
 //******************************************************************************
-void vXputs_commandError(	char* str)
+void vXputs_commandError(char* str)
 {
-	xputs("? ");
-	xputs(str);
-	xputs(" Command Error.\n");
+    xputs("? ");
+    xputs(str);
+    xputs(" Command Error.\n");
 }
 

@@ -78,7 +78,7 @@ int main(void)
         // Add your application code
         vUART_MENU_control();
 
-        if(USBcondition.Status <= eUSB_IDLE )
+        if(USBobj.Status <= eUSB_IDLE )
         {
             USBMSC_statusControl();
         }

@@ -20,7 +20,7 @@
       <itemPath>xprintf.h</itemPath>
       <itemPath>vSCSI_32.h</itemPath>
       <itemPath>vUSBMSC_32.h</itemPath>
-      <itemPath>../../20200103_PIC32MM_sample01/USB_sample01.X/integer.h</itemPath>
+      <itemPath>integer.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
