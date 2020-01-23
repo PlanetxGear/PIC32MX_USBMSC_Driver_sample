@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file vSCSI.c
+ * @file vSCSI_32.c
  * @brief	SCSI COMAND CONTROLLER.
  *			it's designed to work in concert with vUSBMSC.
  * @author hiroshi murakami
@@ -27,12 +27,12 @@ SCSI_CONDITION SCSIobj;
 // SCSI command
 const UINT8 SCSIinquiry[] = {	// INQUIRY command contents(SCSI)
 	0x55, 0x53, 0x42, 0x43, 0x01, 0x00, 0x00, 0x00,
-	0x10, 0x00, 0x00, 0x00, 0x80, 0x00, 0x06, 0x12,
+	0x24, 0x00, 0x00, 0x00, 0x80, 0x00, 0x06, 0x12,
 	0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 const UINT8 SCSIrequestSense[] = {	// REQUEST SENSE command contents(SCSI)
 	0x55, 0x53, 0x42, 0x43, 0x02, 0x00, 0x00, 0x00,
-	0x10, 0x00, 0x00, 0x00, 0x80, 0x00, 0x06, 0x03,
+	0x12, 0x00, 0x00, 0x00, 0x80, 0x00, 0x06, 0x03,
 	0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 const UINT8 SCSIreadFormatCapacity[] = {	// READ FORMAT CAPACITY command contents(SCSI)
@@ -60,8 +60,6 @@ const UINT8 SCSIwriteCmd[] = {	// WRITE command contents (SCSI)
 	0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x2a,
 	0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x01,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-//xxxconst UINT16 ScsiTable[] =	// SCSI command table
-//xxx{(UINT16)SCSIrequestSense, (UINT16)SCSIreadCapacity, (UINT16)SCSIreadCmd, (UINT16)SCSIwriteCmd};// 0,1,2,3
 
 // LOCAL PROTOTYPES
 void SCSI_command_go(void);
@@ -89,7 +87,6 @@ void SCSI_init(void)
     {
         SCSIobj.Status = eSCSI_IDLE;
         SCSIobj.MscTotal = 0;
-        SCSIobj.WaitTrap = 0;
     }
     
 }
@@ -135,7 +132,10 @@ void SCSI_checkTransactionReturn(void)
  * *pic is "little endian"
  *   	
  */
-void SetSector(UINT32 secterNumber, UINT8 buf[])
+void SetSector(
+UINT32 secterNumber, 
+UINT8 buf[]
+)
 {
 	buf[17] = secterNumber >> 24;	// Set sector number 1
 	buf[18] = secterNumber >> 16;	// Set sector number 2
@@ -143,37 +143,6 @@ void SetSector(UINT32 secterNumber, UINT8 buf[])
 	buf[20] = secterNumber & 255;	// Set sector number 4
 }
 
-//******************************************************************************
-/**	
- * @brief   check CSW phrase.
- * @return      eSCSI_STATE
- * @param[in]   dataSize    is CSW data size.
- * @param[in]   buf[]       is command buffer, it's included CSW return phrase.
- * @details
- * check CSW return phrase, whether it is correct or not.
- *   	
- */
-enum eSCSI_STATE SCSI_isErrInCSW(INT16 dataSize, UINT8 buf[])
-{
-	if(dataSize != 13)	// Check size first
-    {
-        DEBUG_PUTS( "SCSI_DATA_SIZE_ERROR\n");
-		return eSCSI_ERR_dataSize;
-    }
-    
-	if(buf[0] != 'U' || buf[1] != 'S' || buf[2] != 'B'|| buf[3] != 'S')
-    {
-        DEBUG_PUTS( "SCSI_SIGNATURE_ERROR\n");
-		return eSCSI_ERR_signature;
-    }
-    
-	if(buf[12])	// Some error (01 cmd err 02 phase error) found?
-    {
-        DEBUG_PRINTF("SCSI_ANY_ERROR,CSW return 0x:%02x\n",(UINT8)buf[12]);
-		return eSCSI_ERR_ANY;
-    }
-    return 0; // Normal return
-}
 
 //******************************************************************************
 /**	
@@ -197,18 +166,13 @@ void SCSI_statusControl(void)
     {
 	case  	eSCSI_CBW_start :
         DEBUG_SCSI1PUTS("SCSI CBW\n");
-        SCSIobj.ErrorCode = 0;
 		USBobj.BufferAddress = (UINT32)UsbBufCMD64;	// the command buffer address to BDT_OUT buffer address.
         USBobj.TransmissionBytes = 31;	// Setup BD to send 31 byte. It must be appropriate data size.
 		setUSB_EPout();
-        uiTMR002 = SCSIobj.WaitTrap;
 		SCSIobj.Status++;		//next step
 		break;
 	case  	eSCSI_CBW_wait :
-        if(IS_uiTMR002_FINISH)
-        {
-            SCSI_checkTransactionReturn();
-        }
+        SCSI_checkTransactionReturn();
 		break;
         
         
@@ -236,7 +200,14 @@ void SCSI_statusControl(void)
 	case  	eSCSI_getData_start :
         DEBUG_SCSI1PUTS("SCSI getDATA Start\n");
 		USBobj.BufferAddress = (UINT32)SCSIobj.UsbBuffAddr;	// the data buffer address to BDT_IN buffer address.
-        USBobj.TransmissionBytes = 64;	// Setup BD to send 31 byte. It must be appropriate data size.
+        if(SCSIobj.DataLength >= 64)
+        {
+            USBobj.TransmissionBytes = 64;	// Setup BD to send 31 byte. It must be appropriate data size.
+        }
+        else
+        {
+            USBobj.TransmissionBytes = SCSIobj.DataLength;	// Setup BD to send 31 byte. It must be appropriate data size.
+        }
 		setUSB_EPin();
 		SCSIobj.Status++;		//next step
 		break;
@@ -264,7 +235,14 @@ void SCSI_statusControl(void)
     case  	eSCSI_putData_start :
         DEBUG_SCSI1PUTS("SCSI putDATA Start\n");
 		USBobj.BufferAddress = (UINT32)SCSIobj.UsbBuffAddr;	// the data buffer address to BDT_OUT buffer address.
-        USBobj.TransmissionBytes = 64;	// Setup BD to send 64 byte. It must be appropriate data size. 
+        if(SCSIobj.DataLength >= 64)
+        {
+            USBobj.TransmissionBytes = 64;	// Setup BD to send 31 byte. It must be appropriate data size.
+        }
+        else
+        {
+            USBobj.TransmissionBytes = SCSIobj.DataLength;	// Setup BD to send 31 byte. It must be appropriate data size.
+        }
 		setUSB_EPout();
 		SCSIobj.Status++;		//next step
 		break;
@@ -300,16 +278,24 @@ void SCSI_statusControl(void)
         SCSI_checkTransactionReturn();
 		break;
 	case	eSCSI_check_CSW_return:
-        SCSIobj.ErrorCode = SCSI_isErrInCSW(USBobj.BDbyteCount, UsbBufCMD64);
-        if (SCSIobj.ErrorCode)	//if error..
+        // check CSW return phrase.
+        if(UsbBufCMD64[0] != 'U' || UsbBufCMD64[1] != 'S' || UsbBufCMD64[2] != 'B'|| UsbBufCMD64[3] != 'S')
         {
-            SCSIobj.Status = SCSIobj.ErrorCode;
-		}
+            DEBUG_PUTS( "SCSI_SIGNATURE_ERROR\n");
+            SCSIobj.Status = eSCSI_ERR_signature;
+        }
+        else if(UsbBufCMD64[12])	// Some error (01:cmd err, 02:phase error) found?
+        {
+            DEBUG_PRINTF("SCSI_ANY_ERROR,CSW return 0x:%02x\n",(UINT8)UsbBufCMD64[12]);
+            SCSIobj.Status = eSCSI_ERR_ANY;
+        }
         else
         {
             SCSIobj.Status = eSCSI_IDLE ;	//Nomal return to Idle..
+
         }
-		
+
+        
 		break;
 
 
@@ -325,7 +311,7 @@ void SCSI_statusControl(void)
 		break;
 	case  	eSCSI_ERR_signature:
 		break;
-	case  	eSCSI_ERR_ANY:      //some error (01 cmd err 02 phase error)
+        case  	eSCSI_ERR_ANY:      //some error (01:cmd err, 02:phase error)
 		break;
 	case  	eSCSI_ERR_END:
 		break;
@@ -356,7 +342,7 @@ void SCSI_command_go(void)
 //******************************************************************************
 /**	
  * @brief   execute SCSI inquiry command. it Used to identify equipment type and configuration.
- * @param[in] buffAddr		working buffer, transmission data buffer address
+ * @param[in] buffAddr		working buffer / transmission data buffer address
  * @details
  *   	
  */
@@ -367,7 +353,7 @@ UINT8* 	buffAddr	// transmission data buffer address
     DEBUG_SCSI1PUTS("SCSI inquiry command\n");
     memcpy(UsbBufCMD64, SCSIinquiry, 31);	// SCSIrequestSense command.
         
-    SCSIobj.DataLength = 64;		//data 64 byte. *over write DataLength.
+    SCSIobj.DataLength = 0x24;		//data 64 byte. *over write DataLength.
     SCSIobj.UsbBuffAddr = buffAddr;   //data buffer address.
     SCSIobj.Command = eSCSI_inquiry;
 
@@ -379,7 +365,7 @@ UINT8* 	buffAddr	// transmission data buffer address
 //******************************************************************************
 /**	
  * @brief   execute SCSI request sense command. it examines the rsult of the last instruction.
- * @param[in] buffAddr		working buffer, transmission data buffer address
+ * @param[in] buffAddr		working buffer / transmission data buffer address
  * @details
  *   	
  */
@@ -390,7 +376,7 @@ UINT8* 	buffAddr	// transmission data buffer address
     DEBUG_SCSI1PUTS("SCSI requestSense command\n");
     memcpy(UsbBufCMD64, SCSIrequestSense, 31);	// SCSIrequestSense command.
         
-    SCSIobj.DataLength = 64;		//data 64 byte. *over write DataLength.
+    SCSIobj.DataLength = 0x12;		//data 64 byte. *over write DataLength.
     SCSIobj.UsbBuffAddr = buffAddr;   //data buffer address.
     SCSIobj.Command = eSCSI_requestSense;
 
@@ -415,7 +401,7 @@ int	i;
     DEBUG_SCSI1PUTS("SCSI readFormatCapacity command\n");
     memcpy(UsbBufCMD64, SCSIreadFormatCapacity, 31);	// SCSI readCapacity command.
         
-    SCSIobj.DataLength = 64;		//data 64 byte. *over write DataLength.
+    SCSIobj.DataLength = 0x10;		//data 64 byte. *over write DataLength.
     SCSIobj.UsbBuffAddr = buffAddr;   //data buffer address.
     SCSIobj.Command = eSCSI_readCapacity;
 
@@ -458,7 +444,7 @@ int	i;
     DEBUG_SCSI1PUTS("SCSI readCapacity command\n");
     memcpy(UsbBufCMD64, SCSIreadCapacity, 31);	// SCSI readCapacity command.
         
-    SCSIobj.DataLength = 64;		//data 64 byte. *over write DataLength.
+    SCSIobj.DataLength = 0x08;		//data 64 byte. *over write DataLength.
     SCSIobj.UsbBuffAddr = buffAddr;   //data buffer address.
     SCSIobj.Command = eSCSI_readCapacity;
 

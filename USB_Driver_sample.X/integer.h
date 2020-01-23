@@ -37,11 +37,12 @@ typedef unsigned long long QWORD;
 #endif
 
 // another type define
-#define UINT8	unsigned char
-#define INT8	signed char
-#define	UINT16	unsigned short int
-#define INT16	signed short int
-#define UINT32	unsigned long int
-#define INT32	signed long int
+typedef unsigned char       UINT8;
+typedef signed char         INT8;
+typedef	unsigned short int  UINT16;
+typedef signed short int    INT16;
+typedef unsigned long int   UINT32;
+typedef signed long int     INT32;
+typedef unsigned long long  UINT64;
 
 #endif

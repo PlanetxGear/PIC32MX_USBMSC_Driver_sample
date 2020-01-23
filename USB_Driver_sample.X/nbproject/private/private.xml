@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="2">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="6">
+        <file>
+            <url>vUSBMSC_32.h</url>
+            <bookmark id="6">
+                <name/>
+                <line>256</line>
+                <key/>
+            </bookmark>
+            <bookmark id="5">
+                <name/>
+                <line>291</line>
+                <key/>
+            </bookmark>
+        </file>
         <file>
             <url>vUSBMSC_32.c</url>
+            <bookmark id="3">
+                <name/>
+                <line>37</line>
+                <key/>
+            </bookmark>
             <bookmark id="2">
                 <name/>
                 <line>68</line>
@@ -10,17 +28,20 @@
             </bookmark>
             <bookmark id="1">
                 <name/>
-                <line>274</line>
+                <line>271</line>
                 <key/>
             </bookmark>
         </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/main.c</file>
-            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vUSBMSC_32.h</file>
             <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vUSBMSC_32.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vUSBMSC_32.h</file>
             <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/mcc_generated_files/uart2.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vUART_MENU.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/integer.h</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vSCSI_32.c</file>
+            <file>file:/D:/Temp/20191206_PIC32MX_USBMSC_Driver_sample/USB_Driver_sample.X/vSCSI_32.h</file>
         </group>
     </open-files>
 </project-private>

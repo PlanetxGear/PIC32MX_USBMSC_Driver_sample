@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file vUSBMSC.c
+ * @file vUSBMSC_32.c
  * @brief	USB HOST MSC driver.
  *			It's a low level driver of USB module
  * @author hiroshi murakami
- * @date	20190728
+ * @date	20200123
  *
  * This software is released under the MIT License, see LICENSE.md
  ******************************************************************************/
@@ -36,16 +36,16 @@
 #define KVA_TO_PA(kva) ((uint32_t)(kva) & 0x1fffffff)
 
 BDTs_ENTRY __attribute__ ((aligned(512)))    BDTs;
-BDT_ENTRY   *pBDTreserve;   //for BDT address reserve.
-EP_OBJ      *pEPreserve;
-UINT8       *pEvenOddreserve;
-UINT8       inOut;
+BDT_ENTRY   *pBDTreserve;   // BDT address reserver.
+EP_OBJECT   *pEPreserve;    // EPset/EPin/EPout reserver.
+UINT8       *pEvenOddreserve;   // Pin Pon pointer reserver for BDT's EVEN/ODD
 
 UINT8 UsbBufCMD64[64];	// buffer for Usb COMMAND
 //UINT8 UsbBufDAT512[512];	// Usb buffer for DATA
-UINT8 UsbBufDCP64[64];	// buffer for Usb DESCRIPTORs
+UINT8 USB_Descriptors[64];	// buffer for USB DESCRIPTORs
 
 // USB object
+SIE_OBJECT SIEobj;
 USB_OBJECT USBobj;
 
 // USB setup commands
@@ -130,15 +130,15 @@ void __ISR(_USB_1_VECTOR, IPL1AUTO) _USB1Interrupt (  )                         
  */
 void USBMSC_clearPinPonBufferPointer(void)
 {
-    USBobj.EPset.EP_Data01 = 0;     //clear CONTROL transmission DATA0/1 number
-    USBobj.EPin.EP_Data01 = 0;     //clear CONTROL transmission DATA0/1 number
-    USBobj.EPout.EP_Data01 = 0;     //clear CONTROL transmission DATA0/1 number
+    SIEobj.EPset.Data01 = 0;     //clear CONTROL transmission DATA0/1 number.
+    SIEobj.EPin.Data01 = 0;      //clear CONTROL transmission DATA0/1 number.
+    SIEobj.EPout.Data01 = 0;     //clear CONTROL transmission DATA0/1 number.
 
-    USBobj.inEvenOdd = 0;     //set pinpon buffer pointer ODD or EVEN, at first EVEN 
-    USBobj.outEvenOdd = 0;    //set pinpon buffer pointer ODD or EVEN, at first EVEN
+    SIEobj.EvenOdd[DIR_IN] = 0;     //set pinpon buffer pointer EVEN or ODD. at first EVEN. 
+    SIEobj.EvenOdd[DIR_OUT] = 0;    //set pinpon buffer pointer EVEN or ODD. at first EVEN.
 
-    U1CONbits.PPBRST = 1;   //pin pon buffer clear
-    U1CONbits.PPBRST = 0;   //pin pon buffer clear
+    U1CONbits.PPBRST = 1;   //pin pon pointer clear for SIE.
+    U1CONbits.PPBRST = 0;   //pin pon pointer clear for SIE.
 }
 
 //******************************************************************************
@@ -148,9 +148,9 @@ void USBMSC_clearPinPonBufferPointer(void)
  */
 void USBMSC_clearEPNumber(void)
 {
-    USBobj.EPset.EP_No = 0;
-    USBobj.EPin.EP_No = 0;
-    USBobj.EPout.EP_No = 0;
+    SIEobj.EPset.EP_No = 0;
+    SIEobj.EPin.EP_No = 0;
+    SIEobj.EPout.EP_No = 0;
 }
     
 //******************************************************************************
@@ -163,7 +163,7 @@ void USBMSC_initRegisters(void)
     DEBUG_USB1PUTS("USBMSC_initRegisters\n");
     USBobj.IsAttach = 0;      // Clear attach flag
     USBobj.IsLowSpeed = 0;    // Reset USB bus speed
-    USBobj.pUSB_Descriptors = (USB_DESCRIPTORS*)&UsbBufDCP64;
+    USBobj.pUSB_Descriptors = (USB_DESCRIPTORS*)&USB_Descriptors;
 
     memset((void*)&BDTs, 0, 32);    // Clear BDT tables
     //KVA_TO_PA:Convert To Physical Address
@@ -244,14 +244,11 @@ void USBMSC_wait1msForNAK(void)
  * and it also check the time out error.
  *       
  */
-enum eUSB_STATE eUSBMSC_checkTransactionReturn(BDT_ENTRY *pBDT)
+enum eUSB_STATE eUSBMSC_checkTransactionReturn(
+BDT_ENTRY *pBDT
+)
 {
-//    int i;  //////// time trap ///////////
-    
-    if(USBobj.SOFCountEx != USBobj.SOFCount)	// 1mS past?
-    {
-        USBobj.SOFCountEx = USBobj.SOFCount;	// Update new tick value
-    }
+    USBobj.SOFCountEx = USBobj.SOFCount;	// Update new tick value
 // Handle Stall
     if(U1IRbits.STALLIF)	// Check STALL bit 
     {
@@ -271,31 +268,21 @@ enum eUSB_STATE eUSBMSC_checkTransactionReturn(BDT_ENTRY *pBDT)
     else if(U1IRbits.TRNIF)	// Data transfer bit set? 
     {
         U1IRbits.TRNIF = 1;	// Clear data transfer bit 
-        USBobj.BDpid = pBDT->STAT.PID;	// Get PID
-        USBobj.BDbyteCount = pBDT->count;	// Get data count
-		DEBUG_USB1PRINTF( "PID:0x%02x\n", USBobj.BDpid);
-        if(USBobj.BDpid == 0x02 || USBobj.BDpid == 0x03 || USBobj.BDpid == 0x0b)	// ACK/DATA0/DATA1 PID means success of transaction
+        SIEobj.BDpid = pBDT->STAT.PID;	// Get PID
+        SIEobj.BDbyteCount = pBDT->count;	// Get data count
+		DEBUG_USB1PRINTF( "PID:0x%02x\n", SIEobj.BDpid);
+        if(SIEobj.BDpid == 0x02 || SIEobj.BDpid == 0x03 || SIEobj.BDpid == 0x0b)	// ACK/DATA0/DATA1 PID means success of transaction
 		{
            
-//            uiTMR001 = 4;		//clear set 4ms time out trap timer for USB write, it's needed! 
             USBobj.Status ++;		// Next Step
 			return USBobj.Status;	// return Next Steatus
 		} 
-        else if(USBobj.BDpid == 0x0a)	// NAK PID means USB device is not ready
+        else if(SIEobj.BDpid == 0x0a)	// NAK PID means USB device is not ready
         {
-            if(USBobj.RetrayCount == 0)
-            {
-                USBobj.Status = ++USBobj.Status;		// next
-                return USBobj.Status;	// return retray with waitting SOF change for NAK
-            }
-            else 
-            {
-                USBobj.RetrayCount--;
-                USBobj.Status = USBobj.Status -2;		// retray
-                return USBobj.Status;	// return retray with waitting SOF change for NAK
-            }
+            USBobj.Status = USBobj.Status -2;		// retray
+            return USBobj.Status;	// return retray with waitting SOF change for NAK
         }
-        else if(USBobj.BDpid == 0x0e)	// STALL PID?
+        else if(SIEobj.BDpid == 0x0e)	// STALL PID?
         {
 			USBobj.Status = eUSB_ERR_STALL;	// Return as STALL result
             DEBUG_PUTS( "USB_STALL_PID\n");
@@ -303,7 +290,7 @@ enum eUSB_STATE eUSBMSC_checkTransactionReturn(BDT_ENTRY *pBDT)
         }
         else	// Unknown pid has come
 			USBobj.Status = eUSB_ERR_UnknownPID;	// Return as ERROR result
-			DEBUG_PRINTF( "USB_PID_ERROR. Unknow PID:0x%02x\n", USBobj.BDpid);
+			DEBUG_PRINTF( "USB_PID_ERROR. Unknow PID:0x%02x\n", SIEobj.BDpid);
 			return USBobj.Status;
     }
     
@@ -322,12 +309,13 @@ enum eUSB_STATE eUSBMSC_checkTransactionReturn(BDT_ENTRY *pBDT)
  * @brief    USB transaction status control.
  * @param[in,out]    USBobj.
  * @details    
- * this is main program of USB MSC module. it consists of 4 stages.
- * 1.USB module initialize, USB attach, reset USB bus
- * 2.USB set Address, set config, they are CONTROL transfer. it use EP0
- * 3.data in, data out, they are BULK transfer. they use EP1, EP2.
- * 4.Note that, when errors happen the status stops in ERRORs. 
- *   you should initialize the USB status.
+ * this is main program of USBMSC module. it consists of some stages.
+ * 1.USB module initialize, wait attach, USB attach, reset USB bus
+ * 2.set Address, set config, they are CONTROL transfer. it use EP0
+ * 3.get Device, Config(with EP) Descripters. then decide EP number for IN/OUT transactions.
+ * 4.data in, data out, they are BULK transfer. they use EP1, EP2.
+ * 5.Note that, when errors happen the status stops in ERRORs, 
+ *   when errors happen you should initialize the USB status.
  *       
  */
 void USBMSC_statusControl(void)
@@ -474,13 +462,13 @@ void USBMSC_statusControl(void)
 
         if(USBobj.pUSB_Descriptors->EPa.EP_Nos.direction == 1)
         {
-            USBobj.EPin.EP_No = USBobj.pUSB_Descriptors->EPa.EP_Nos.EP_No;
-            USBobj.EPout.EP_No = USBobj.pUSB_Descriptors->EPb.EP_Nos.EP_No;
+            SIEobj.EPin.EP_No = USBobj.pUSB_Descriptors->EPa.EP_Nos.EP_No;
+            SIEobj.EPout.EP_No = USBobj.pUSB_Descriptors->EPb.EP_Nos.EP_No;
         }
         else
         {
-            USBobj.EPin.EP_No = USBobj.pUSB_Descriptors->EPb.EP_Nos.EP_No;
-            USBobj.EPout.EP_No = USBobj.pUSB_Descriptors->EPa.EP_Nos.EP_No;
+            SIEobj.EPin.EP_No = USBobj.pUSB_Descriptors->EPb.EP_Nos.EP_No;
+            SIEobj.EPout.EP_No = USBobj.pUSB_Descriptors->EPa.EP_Nos.EP_No;
         }
         
         USBobj.Command = eUSB_IDLE;
@@ -493,10 +481,8 @@ void USBMSC_statusControl(void)
     case      eUSB_CONTROL_OUT_start:
         DEBUG_USB1PRINTF("eUSB_CONTROL_OUT_start,SOF:%d\n",USBobj.SOFCount);
 
-        pEPreserve = &USBobj.EPset;
-        inOut = DIR_OUT;
-        pEvenOddreserve = &USBobj.outEvenOdd;
-        USBobj.RetrayCount = 0xffff;
+        pEPreserve = &SIEobj.EPset;
+        SIEobj.inOut = DIR_OUT;
         
         USBobj.Status = eUSB_DataRW_start;
         break;
@@ -504,10 +490,8 @@ void USBMSC_statusControl(void)
     case      eUSB_CONTROL_IN_start:
         DEBUG_USB1PRINTF("eUSB_CONTROL_IN_start,SOF:%d\n",USBobj.SOFCount);
 
-        pEPreserve = &USBobj.EPset;
-        inOut = DIR_IN;
-        pEvenOddreserve = &USBobj.inEvenOdd;
-        USBobj.RetrayCount = 0xffff;
+        pEPreserve = &SIEobj.EPset;
+        SIEobj.inOut = DIR_IN;
         
         USBobj.Status = eUSB_DataRW_start;
         break;
@@ -518,10 +502,8 @@ void USBMSC_statusControl(void)
         
         USBobj.Command = eUSB_Busy;
 
-        pEPreserve = &USBobj.EPout;
-        inOut = DIR_OUT;
-        pEvenOddreserve = &USBobj.outEvenOdd;
-        USBobj.RetrayCount = 0xffff;
+        pEPreserve = &SIEobj.EPout;
+        SIEobj.inOut = DIR_OUT;
         
         USBobj.Status = eUSB_DataRW_start;
         break;
@@ -531,10 +513,8 @@ void USBMSC_statusControl(void)
         
         USBobj.Command = eUSB_Busy;
         
-        pEPreserve = &USBobj.EPin;
-        inOut = DIR_IN;
-        pEvenOddreserve = &USBobj.inEvenOdd;
-        USBobj.RetrayCount = 0xffff;
+        pEPreserve = &SIEobj.EPin;
+        SIEobj.inOut = DIR_IN;
         
         USBobj.Status = eUSB_DataRW_start;
         break;
@@ -547,30 +527,27 @@ void USBMSC_statusControl(void)
     case      eUSB_DataRW_start:
         DEBUG_USB1PRINTF("eUSB_DataRW_start,SOF:%d\n",USBobj.SOFCount);
 
-        pBDTreserve = &BDTs.BDT_IO[inOut][*pEvenOddreserve];
+        pEvenOddreserve = &SIEobj.EvenOdd[SIEobj.inOut];
+        pBDTreserve = &BDTs.BDT_IO[SIEobj.inOut][*pEvenOddreserve];
         pBDTreserve->ADR = KVA_TO_PA(USBobj.BufferAddress);    // Setup BD to buffer address
         pBDTreserve->count = USBobj.TransmissionBytes;    // Setup BD to 64 byte
-        pBDTreserve->STAT.Val = BDT_STAT_UOWN_H | (pEPreserve->EP_Data01 << BDT_DATA01_POSITION);
+        pBDTreserve->STAT.Val = BDT_STAT_UOWN_H | (pEPreserve->Data01 << BDT_DATA01_POSITION);
         
-        *pEvenOddreserve ^= 1;    // Flip  PinPon pointer  bit for next
-        pEPreserve->EP_Data01 ^= 1;    // Flip DATA0/1 bit for next
+        *pEvenOddreserve ^= 1;    // Flip PinPon pointer for next
         USBobj.Status++;        //next step
         uiTMR001 = 10;        //time out trap
 
-        //if(pEPreserve == &USBobj.EPin)
-        //if ((pBDTreserve == &BDTs.BDT_IN_D0) || (pBDTreserve == &BDTs.BDT_IN_D1))
-        if(inOut == DIR_IN)
+        if(SIEobj.inOut == DIR_IN)
         {
             U1TOK = U1TOK_PID_TOKEN_IN | (UINT32)pEPreserve->EP_No;    //start transaction
         }
-        else if(pEPreserve == &USBobj.EPout || pEPreserve == &USBobj.EPin)
+        else if(pEPreserve == &SIEobj.EPout || pEPreserve == &SIEobj.EPin)
         {
-            
-            U1TOK = U1TOK_PID_TOKEN_OUT | (UINT32)pEPreserve->EP_No;        //start transaction
+            U1TOK = U1TOK_PID_TOKEN_OUT | (UINT32)pEPreserve->EP_No;    //start transaction
         }
         else
         {
-            U1TOK = U1TOK_PID_TOKEN_SETUP | (UINT32)pEPreserve->EP_No;        //start transaction
+            U1TOK = U1TOK_PID_TOKEN_SETUP | (UINT32)pEPreserve->EP_No;  //start transaction
         }
 
         break;
@@ -579,8 +556,8 @@ void USBMSC_statusControl(void)
         break;
     case      eUSB_DataRW_END:
         DEBUG_USB1PUTS("eUSB_DataRW_END\n");
-//        pEPreserve->EP_Data01 ^= 1;    // Flip DATA0/1 bit for next
-        USBobj.Status = ++USBobj.Command;          //return to command
+        pEPreserve->Data01 ^= 1;         // Flip DATA0/1 bit for next
+        USBobj.Status = ++USBobj.Command;   //return to command
         break;
 
         

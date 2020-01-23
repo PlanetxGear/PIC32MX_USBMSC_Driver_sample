@@ -32,14 +32,8 @@ enum eSCSI_STATE {
 	eSCSI_CBW_start,
 	eSCSI_CBW_wait,
     
-//	eSCSI_CBWempty_start,
-//	eSCSI_CBWempty_wait,
-    
     eSCSI_getputBranch,
 
-//	eSCSI_getEmpty_start,
-//	eSCSI_getEmpty_wait,
-    
 	eSCSI_getData_start,
 	eSCSI_getData_wait,
 	eSCSI_getData_next,
@@ -48,30 +42,11 @@ enum eSCSI_STATE {
 	eSCSI_putData_wait,
 	eSCSI_putData_next,
 
-//	eSCSI_putEmpty_start,
-//	eSCSI_putEmpty_wait,
-//	eSCSI_putEmpty_next,
-    
-	
-//    eSCSI_CSW,
-//    eSCSI_CSWempty_start,
-//    eSCSI_CSWempty_wait,
-
 	eSCSI_CSW_start,
 	eSCSI_CSW_wait,
     eSCSI_check_CSW_return,
 	
 
-// test.
-    eSCSI_EPin_EmptyOut_test,
-    eSCSI_EPin_EmptyOut_test1,
-    eSCSI_EPin_EmptyOut_test2,
-
-    eSCSI_EPout_EmptyIn_test,
-    eSCSI_EPout_EmptyIn_test1,
-    eSCSI_EPout_EmptyIn_test2,
-	
-    
 // IDLE or END or WAIT next data.
 	eSCSI_IDLE,
 
@@ -99,11 +74,9 @@ typedef struct __SCSI_CONDITION
 {
 	enum eSCSI_STATE        Status;
 	enum eSCSI_COMMAND		Command;
-	enum eSCSI_STATE        ErrorCode;
+    INT16					DataLength;		// transmission data length
     UINT32					MscTotal;		// SCSI final sector number
-    UINT16					DataLength;		// transmission data length
     UINT8*					UsbBuffAddr;	// transmission data buffer address
-    UINT8                   WaitTrap;       //wait trap
 } SCSI_CONDITION;
 
 /*****************************

@@ -42,7 +42,7 @@ const BYTE bMsg01[] = {
 	"+uk->SCSI readFormatCapacity & get LastSecter No.\n"
 	"+ud->USB Dump Device Discriptor\n"
 	"+uf->USB Dump Config Discriptor\n"
-    "+ui <wait_msec>->insert wait msec to SCSI\n"
+//    "+ui <wait_msec>->insert wait msec to SCSI\n"
 	"+ur <sector>->SCSI read & get data in the last Secter or assigned Sector\n"				
 	"+us->SCSI requestSense\n"
 	"+ut->SCSI testUnitReady\n"
@@ -296,16 +296,16 @@ UINT    cnt;
         xprintf("SCSIstatus:%d USBstatus:%d \n",SCSIobj.Status, USBobj.Status);
         break;
         
-    case 'I' :    /* ui <wait msec> - insert wait msec */
-    case 'i' :    /* ui <wait msec> - insert wait msec */
-        xputs("set wait msec\n");
-        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
-        if (!xatoi(&pCmdbuf, &p1))
-        {
-            p1 = 0;
-        }
-        SCSIobj.WaitTrap = p1;
-        break;
+//    case 'I' :    /* ui <wait msec> - insert wait msec */
+//    case 'i' :    /* ui <wait msec> - insert wait msec */
+//        xputs("set wait msec\n");
+//        pCmdbuf = (char*)&cCmdBuf[3];   //Get a offset
+//        if (!xatoi(&pCmdbuf, &p1))
+//        {
+//            p1 = 0;
+//        }
+//        SCSIobj.WaitTrap = p1;
+//        break;
 
 
     default:
