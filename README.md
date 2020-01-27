@@ -11,17 +11,17 @@ You can operat it by terminal with serial communication speed of 115,200 bps.
 
 
 ## References.
-<http://ww1.microchip.com/downloads/en/DeviceDoc/39721b.pdf>
-<http://ww1.microchip.com/downloads/jp/DeviceDoc/39721B_JP.pdf>
+<http://ww1.microchip.com/downloads/en/DeviceDoc/61126F.pdf>
+<http://ww1.microchip.com/downloads/jp/DeviceDoc/61126F_JP.pdf>
 <http://www.picfun.com/usb03.html>
 
 
 ## Prerequisites
 I created this project using the free versions of the following tools:
- * [Microchip MPLAB X][1] (v5.20)
- * [Microchip MPLAB X Code Configurator][2] (v3.85)
+ * [Microchip MPLAB X][1] (v5.30)
+ * [Microchip MPLAB X Code Configurator][2] (v3.85.1)
  * [Microchip XC32 Compiler][4] (v2.30)
- * [KiCad][6] (v4.0.1)
+ * [KiCad][7] (v5.1.5)
 
 You shoud download and install these tools appropriately before you will open this project and build it.
 I use the [Microchip MPLAB PICkit3 In-Circuit Debugger][3] to program the PIC and debug it.  
@@ -42,5 +42,6 @@ Hiroshi Murakami
 [3]: http://www.microchip.com/Developmenttools/ProductDetails.aspx?PartNO=PG164130 "MPLAB PICkit3 In-Circuit Debugger"
 [4]: http://www.microchip.com/pagehandler/en_us/devtools/mplabxc/ "MPLAB XC Compilers"
 [5]: https://www.microchip.com/wwwproducts/en/PIC32MX250F128B
-[6]: https://www.microchip.com/mplab/microchip-libraries-for-applications 
+[6]: https://www.microchip.com/mplab/microchip-libraries-for-applications
+[7]: https://kicad-pcb.org/ 
 

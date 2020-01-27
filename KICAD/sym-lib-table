@@ -1,0 +1,10 @@
+(sym_lib_table
+  (lib (name transistors)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/transistors.lib)(options "")(descr "")(disabled))
+  (lib (name conn)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/conn.lib)(options "")(descr "")(disabled))
+  (lib (name linear)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/linear.lib)(options "")(descr "")(disabled))
+  (lib (name regul)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/regul.lib)(options "")(descr "")(disabled))
+  (lib (name microcontrollers)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/microcontrollers.lib)(options "")(descr "")(disabled))
+  (lib (name microchip)(type Legacy)(uri ${KICAD_SYMBOL_DIR}/microchip.lib)(options "")(descr "")(disabled))
+  (lib (name mylib20161223)(type Legacy)(uri ${MYLIB_01}/mylib20161223.lib)(options "")(descr ""))
+  (lib (name PIC32MX_USBMSC_Driver-rescue)(type Legacy)(uri ${KIPRJMOD}/PIC32MX_USBMSC_Driver-rescue.lib)(options "")(descr ""))
+)
